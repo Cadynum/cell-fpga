@@ -105,7 +105,7 @@ TIMESPEC TS_sys_clk_pin = PERIOD sys_clk_pin 10.000 ns HIGH 50% INPUT_JITTER 100
 #Net "PhyCol" LOC = P4 | IOSTANDARD = LVCMOS33; #Bank = 3, pin name = IO_L2P, Sch name = ETH-COL
 #Net "PhyClk25Mhz" LOC = N4 | IOSTANDARD = LVCMOS33; #Unconnected if R172 is not loaded, Bank = 3, pin name = IO_L1P, Sch name = ETH-CLK25MHZ
 
-#Net "PhyTxd<3>" LOC = T1 | IOSTANDARD = LVCMOS33; #Bank = 3, pin name = IO_L33N_M3DQ13, Sch name = ETH-TXD3 
+#Net "PhyTxd<3>" LOC = T1 | IOSTANDARD = LVCMOS33; #Bank = 3, pin name = IO_L33N_M3DQ13, Sch name = ETH-TXD3
 #Net "PhyTxd<2>" LOC  = T2 | IOSTANDARD = LVCMOS33; #Bank = 3, pin name = IO_L33P_M3DQ12, Sch name = ETH-TXD2
 #Net "PhyTxd<1>" LOC = U1 | IOSTANDARD = LVCMOS33; #Bank = 3, pin name = IO_L32N_M3DQ15, Sch name = ETH-TXD1
 #Net "PhyTxd<0>" LOC = U2 | IOSTANDARD = LVCMOS33; #Bank = 3, pin name = IO_L32P_M3DQ14, Sch name = ETH-TXD0
@@ -175,9 +175,9 @@ Net "sw<7>" LOC = T5 | IOSTANDARD = LVCMOS33; #Bank = MISC, pin name = IO_L48N_R
 
 ## Buttons
 Net "reset" LOC = B8 | IOSTANDARD = LVCMOS33; #Bank = 0, pin name = IO_L33P, Sch name = BTNS
-#Net "btnu" LOC = A8 | IOSTANDARD = LVCMOS33; #Bank = 0, pin name = IO_L33N, Sch name = BTNU
+Net "btnu" LOC = A8 | IOSTANDARD = LVCMOS33; #Bank = 0, pin name = IO_L33N, Sch name = BTNU
 Net "btnl" LOC = C4 | IOSTANDARD = LVCMOS33; #Bank = 0, pin name = IO_L1N_VREF, Sch name = BTNL
-#Net "btnd" LOC = C9 | IOSTANDARD = LVCMOS33; #Bank = 0, pin name = IO_L34N_GCLK18, Sch name = BTND
+Net "btnd" LOC = C9 | IOSTANDARD = LVCMOS33; #Bank = 0, pin name = IO_L34N_GCLK18, Sch name = BTND
 Net "btnr" LOC = D9 | IOSTANDARD = LVCMOS33; # Bank = 0, pin name = IO_L34P_GCLK19, Sch name = BTNR
 
 ## VGA Connector

@@ -1,13 +1,13 @@
 library ieee;
-library work;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.types.all;
+use work.modeline.all;
 
 
 entity cell1d is
 	port (
-		clk_in, reset, btnr, btnl : in std_logic;
+		clk_in, reset, btnr, btnl, btnu, btnd : in std_logic;
 		sw : in std_logic_vector(7 downto 0);
 		an : out std_logic_vector(3 downto 0);
 		seg : out std_logic_vector(7 downto 0);
@@ -19,8 +19,10 @@ end entity;
 
 
 architecture a of cell1d is
-	constant width : integer := 1024;
-	constant height : integer := 768;
+	constant r : Sync := r1280x1024x60;
+
+	constant width : integer := 1280;
+	constant height : integer := 1024;
 	signal clk, visible : std_logic;
 
 	signal rule : std_logic_vector(7 downto 0);
@@ -29,25 +31,21 @@ architecture a of cell1d is
 
 	signal hPulse, vPulse : std_logic;
 	signal animate : std_logic := '0';
-	signal cc : std_logic;
+	signal cc, output : std_logic;
 
 	signal trigCell: Source := OneSet;
 	signal saveGeneration : std_logic;
 
-	component clockgen is
-	port
-	 (-- Clock in ports
-	  clk_in           : in     std_logic;
-	  -- Clock out ports
-	  clk_out        : out    std_logic
-	 );
-	end component;
+	signal btnuDB, btndDB : std_logic;
+	signal incSpeed, decSpeed : std_logic;
+	signal speed : unsigned(5 downto 0) := (others => '0');
+
 begin
 
-C_CLOCKGEN: component clockgen port map (clk_in, clk);
+C_CLOCKGEN: entity work.clockgen port map (clk_in, clk);
 
 CELL:	entity work.cell generic map (width)
-		port map (clk, reset, trigCell, saveGeneration, rule, cc, open);
+		port map (clk, reset, trigCell, saveGeneration, rule, cc);
 
 
 	trigCell <= 	OneSet		when vPulse = '1' and animate = '0' else
@@ -56,7 +54,24 @@ CELL:	entity work.cell generic map (width)
 			Idle;
 
 
-	saveGeneration <= '1' when y = 1 and x = 0 and hPulse = '1' else '0';
+	saveGeneration <= '1' when y = speed and x = 0 and hPulse = '1' else '0';
+
+	INCD : entity work.debounce generic map (15) port map (clk, reset, btnu, btnuDB);
+	DECD : entity work.debounce generic map (15) port map (clk, reset, btnd, btndDB);
+	INC: entity work.onepulse port map (clk, reset, btnuDB, incSpeed);
+	DEC: entity work.onepulse port map (clk, reset, btndDB, decSpeed);
+
+	process (reset, clk) is begin
+		if reset = '1' then
+			speed <= (others => '0');
+		elsif rising_edge(clk) then
+			if incSpeed = '1' and decSpeed = '0' then
+				speed <= speed + 1;
+			elsif incSpeed = '0' and decSpeed = '1' then
+				speed <= speed - 1;
+			end if;
+		end if;
+	end process;
 
 
 	process (reset, clk) is begin
@@ -76,18 +91,12 @@ CELL:	entity work.cell generic map (width)
 
 Seg7Disp: entity work.decimal7seg port map (clk, hPulse, rule, an, seg);
 
-VGACTL:	entity work.vgaController
-			-- 1280x1024x60hz
-			--generic map	( 1280, 48, 112, 248, '1'
-			--		, 1024, 1, 3, 38, '1')
-
-			--1024x768x60hz
-			generic map	( 1024, 24, 136, 160, '0'
-					, 768, 3, 6, 29, '0')
+VGACTL:	entity work.vgaController generic map (r)
 			port map (clk, reset, x, y, visible, hPulse, vPulse, hSync, vSync);
-
-	vgaRed <= (others => visible and not cc);
-	vgaGreen <= (others => visible and not cc);
-	vgaBlue <= (others => visible and not cc);
+	
+	output <= visible and not cc;
+	vgaRed <= (others => output);
+	vgaGreen <= (others => output);
+	vgaBlue <= (others => output);
 
 end architecture;

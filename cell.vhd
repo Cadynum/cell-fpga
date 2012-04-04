@@ -17,7 +17,7 @@ entity cell is
 		cellSource : in Source;
 		save : in std_logic;
 		rule : in std_logic_vector(7 downto 0);
-		current, ready : out std_ulogic
+		current: out std_ulogic
 	);
 end;
 
@@ -41,8 +41,6 @@ architecture a of cell is
 	signal writeEnable : boolean;
 	signal writeContent : std_logic;
 
-	signal readyInt : std_logic := '1';
-
 
 	function active_high(b : boolean) return std_logic is begin
 		if b then	return '1';
@@ -63,16 +61,18 @@ begin
 	end process;
 	working <= '1' when cellMode /= Idle else '0';
 
+	process (clk) is begin
+		if rising_edge(clk) then
+			setCntT <= cnt;
+			setWorkingT <= working;
+			setWorking <= setWorkingT;
+			setCnt <= setCntT;
 
-
-	setCntT <= cnt when rising_edge(clk) ;
-	setWorkingT <= working when rising_edge(clk);
-	setWorking <= setWorkingT when rising_edge(clk);
-	setCnt <= setCntT when rising_edge(clk);
-
-	c <= cell(cnt) when rising_edge(clk);
-	cs <= seed(cnt) when rising_edge(clk);
-	css <= cs when rising_edge(clk);
+			c <= cell(cnt);
+			cs <= seed(cnt);
+			css <= cs;
+		end if;
+	end process;
 
 	threeCells <=	'0' & store(0) & c 	when setCnt = 0		else
 			store & '0'		when setCnt = cellMax	else
@@ -104,16 +104,12 @@ begin
 		if reset = '1' then
 			cellMode <= Idle;
 			saveMode <= '0';
-			readyInt <= '1';
 		elsif rising_edge(clk) then
-			readyInt <= '1';
 			if cellMode = Idle then
 				cellMode <= cellSource;
 			elsif setCnt = cellMax then
 				cellMode <= cellSource;
 				saveMode <= '0';
-			else
-				readyInt <= '0';
 			end if;
 			if save = '1' then
 				saveMode <= '1';
@@ -122,5 +118,4 @@ begin
 	end process;
 
 	current <= c;
-	ready <= readyInt;
 end;

@@ -1,37 +1,54 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
+package Modeline is
+	type Sync is 
+	record
+		hSize : natural;
+		hFrontPorch : natural;
+		hSyncPulse : natural;
+		hBackPorch : natural;
+		hPolarity : std_logic;
+
+		vSize : natural;
+		vFrontPorch : natural;
+		vSyncPulse : natural;
+		vBackPorch : natural;
+		vPolarity : std_logic;
+	end record;
+	
+	constant r1280x1024x60 : Sync :=
+		( 1280, 48, 112, 248, '1'
+		, 1024, 1, 3, 38, '1');
+	constant r1024x768x60 : Sync :=
+		( 1024, 24, 136, 160, '0'
+		, 768, 3, 6, 29, '0');
+end;
+
+
+library ieee;
+use ieee.std_logic_1164.all;
+use work.Modeline.all;
 
 entity vgacontroller is
-	generic (
-		constant hSize : natural := 640;
-		constant hFrontPorch : natural := 16;
-		constant hSyncPulse : natural := 96;
-		constant hBackPorch : natural := 48;
-		constant hPolarity : std_logic := '0';
-
-		constant vSize : natural := 480;
-		constant vFrontPorch : natural := 10;
-		constant vSyncPulse : natural := 2;
-		constant vBackPorch : natural := 33;
-		constant vPolarity : std_logic := '0'
-	);
+	generic (r : Sync := r1024x768x60);
 	port (
 		pixClk, reset : in std_logic;
-		x : out natural range 0 to hSize - 1;
-		y : out natural range 0 to vSize - 1;
+		x : out natural range 0 to r.hSize - 1;
+		y : out natural range 0 to r.vSize - 1;
 		visible, hPulse, vPulse, hSync, vSync : out std_logic
 	);
 end entity;
 
 
 architecture a of vgacontroller is
-	constant hMax : natural := hFrontPorch + hSyncPulse + hBackPorch + hSize - 1;
-	constant vMax : natural := vFrontPorch + vSyncPulse + vBackPorch + vSize - 1;
-	constant hBeginArea : natural := hFrontPorch + hSyncPulse + hBackPorch;
-	constant vBeginArea : natural := vFrontPorch + vSyncPulse + vBackPorch;
+	constant hMax : natural := r.hFrontPorch + r.hSyncPulse + r.hBackPorch + r.hSize - 1;
+	constant vMax : natural := r.vFrontPorch + r.vSyncPulse + r.vBackPorch + r.vSize - 1;
+	constant hBeginArea : natural := r.hFrontPorch + r.hSyncPulse + r.hBackPorch;
+	constant vBeginArea : natural := r.vFrontPorch + r.vSyncPulse + r.vBackPorch;
 	signal pixCnt : natural range 0 to hMax := 0;
 	signal lineCnt : natural range 0 to vMax := 0;
+	signal hVis, yVis : boolean;
 begin
 	process (pixClk, reset) begin
 		if reset = '1' then
@@ -51,16 +68,18 @@ begin
 		end if;
 	end process;
 
-	x <= pixCnt - hBeginArea when pixCnt >= hBeginArea else 0;
-	y <= lineCnt - vBeginArea when lineCnt >= vBeginArea else 0;
+	hVis <= pixCnt >= hBeginArea;
+	yVis <= lineCnt >= vBeginArea;
+	
+	x <= pixCnt - hBeginArea when hVis else 0;
+	y <= lineCnt - vBeginArea when yVis else 0;
 
-	vSync <= vPolarity when lineCnt >= vFrontPorch and lineCnt < vFrontPorch+vSyncPulse else not vPolarity;
-	hSync <= hPolarity when pixCnt >= hFrontPorch and pixCnt < hFrontPorch+hSyncPulse else not hPolarity;
+	vSync <= r.vPolarity when lineCnt >= r.vFrontPorch and lineCnt < r.vFrontPorch+r.vSyncPulse else not r.vPolarity;
+	hSync <= r.hPolarity when pixCnt >= r.hFrontPorch and pixCnt < r.hFrontPorch+r.hSyncPulse else not r.hPolarity;
 
-	visible <= '1' when lineCnt >= vBeginArea and pixCnt >= hBeginArea else '0';
-
-	hPulse <= '1' when pixCnt = hBeginArea-1
-			and lineCnt >= vBeginArea else '0';
+	visible <= '1' when hVis and yVis else '0';
+	
+	hPulse <= '1' when pixCnt = hBeginArea-1 and yVis else '0';
 	vPulse <= '1' when lineCnt = 0 and pixCnt = 0 else '0';
 
 end architecture;

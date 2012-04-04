@@ -8,7 +8,7 @@ end entity;
 
 
 architecture a of celltest is
-	constant size : natural := 16;
+	constant size : natural := 1280;
 	signal clk, reset: std_logic := '0';
 	signal view, ready : std_logic;
 	signal cellS : Source;
@@ -20,7 +20,7 @@ begin
 			NextGeneration after 500 ns,
 			OneSet after 2000 ns;
 
-	C1 : entity work.cell generic map (size) port map (clk, reset, cellS, '0', "00000010", view, ready);
+	C1 : entity work.cell generic map (size) port map (clk, reset, cellS, '0', "00000010", view);
 
 
 
